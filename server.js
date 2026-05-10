@@ -18,7 +18,7 @@ app.use('/api/auth', authRoutes);
 
 // Rotas PRIVADAS (precisam de token - por isso o 'protect' é passado)
 // O 'protect' vai rodar ANTES de chegar no productRoutes
-app.use('/api/products', protect, productRoutes);
+app.use('/api/products', protect, productRoutes); 
 
 app.get('/', (req, res) => {
   res.send('API do Catálogo de Produtos está rodando!');
