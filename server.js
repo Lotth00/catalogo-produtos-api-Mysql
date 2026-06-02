@@ -4,11 +4,16 @@ const connectDB = require('./src/config/db');
 const productRoutes = require('./src/routes/productRoutes');
 const authRoutes = require('./src/routes/authRoutes');
 const { protect } = require('./src/middlewares/authMiddleware');
+const swaggerUi = require('swagger-ui-express');
+const swaggerDocument = require('./swagger-output.json');
 
 dotenv.config();
 connectDB();
 
 const app = express();
+
+// Rota da documentação Swagger
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // Middleware para ler JSON
 app.use(express.json());
