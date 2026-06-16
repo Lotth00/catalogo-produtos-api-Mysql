@@ -12,7 +12,7 @@ API RESTful para gerenciamento de produtos com autenticação de usuários.
 
 ### Pré-requisitos
 - Node.js instalado (versão 14 ou superior)
-- MongoDB instalado localmente OU conta no MongoDB Atlas
+- MySQL instalado localmente
 
 ### Passo a passo
 
