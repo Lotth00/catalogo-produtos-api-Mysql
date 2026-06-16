@@ -1,14 +1,10 @@
 const express = require('express');
-const dotenv = require('dotenv');
-const connectDB = require('./src/config/db');
-const productRoutes = require('./src/routes/productRoutes');
 const authRoutes = require('./src/routes/authRoutes');
+const productRoutes = require('./src/routes/productRoutes'); // se existir
+const categoriaRoutes = require('./src/routes/categoriaRoutes'); // <-- NOVO
 const { protect } = require('./src/middlewares/authMiddleware');
 const swaggerUi = require('swagger-ui-express');
 const swaggerDocument = require('./swagger-output.json');
-
-dotenv.config();
-connectDB();
 
 const app = express();
 
@@ -18,12 +14,19 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 // Middleware para ler JSON
 app.use(express.json());
 
-// Rotas PÚBLICAS (não precisam de token)
+// ---------- ROTAS PÚBLICAS (não precisam de token) ----------
 app.use('/api/auth', authRoutes);
 
-// Rotas PRIVADAS (precisam de token - por isso o 'protect' é passado)
-// O 'protect' vai rodar ANTES de chegar no productRoutes
-app.use('/api/products', protect, productRoutes); 
+// Rota pública de versão (já existe)
+app.get('/api/status', (req, res) => {
+    res.json({ versao: '2.0.0', status: 'online' });
+});
+
+// ---------- ROTAS PRIVADAS (precisam de token) ----------
+app.use('/api/products', protect, productRoutes); // se ainda for usar
+
+// Rota de categorias (já tem o middleware protect dentro de cada endpoint)
+app.use('/api/categorias', categoriaRoutes); // <-- NOVO
 
 app.get('/', (req, res) => {
   res.send('API do Catálogo de Produtos está rodando!');
