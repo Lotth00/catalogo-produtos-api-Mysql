@@ -1,38 +1,41 @@
 const express = require('express');
+const dotenv = require('dotenv');
+const cors = require('cors');
 const authRoutes = require('./src/routes/authRoutes');
-const productRoutes = require('./src/routes/productRoutes'); // se existir
-const categoriaRoutes = require('./src/routes/categoriaRoutes'); // <-- NOVO
+const productRoutes = require('./src/routes/productRoutes');
+const categoriaRoutes = require('./src/routes/categoriaRoutes');
+const clienteRoutes = require('./src/routes/clienteRoutes');   // NOVO
+const pedidoRoutes = require('./src/routes/pedidoRoutes');     // NOVO
 const { protect } = require('./src/middlewares/authMiddleware');
-const swaggerUi = require('swagger-ui-express');
-const swaggerDocument = require('./swagger-output.json');
+
+dotenv.config();
 
 const app = express();
+const port = process.env.PORT || 3000;
 
-// Rota da documentação Swagger
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
-
-// Middleware para ler JSON
+app.use(cors());
 app.use(express.json());
 
-// ---------- ROTAS PÚBLICAS (não precisam de token) ----------
-app.use('/api/auth', authRoutes);
-
-// Rota pública de versão (já existe)
 app.get('/api/status', (req, res) => {
     res.json({ versao: '2.0.0', status: 'online' });
 });
 
-// ---------- ROTAS PRIVADAS (precisam de token) ----------
-app.use('/api/products', protect, productRoutes); // se ainda for usar
+app.use('/api/auth', authRoutes);
 
-// Rota de categorias (já tem o middleware protect dentro de cada endpoint)
-app.use('/api/categorias', categoriaRoutes); // <-- NOVO
+app.use('/api/products', productRoutes);      
+app.use('/api/categorias', categoriaRoutes);   
+app.use('/api/clientes', clienteRoutes);       
+app.use('/api/pedidos', pedidoRoutes);        
 
 app.get('/', (req, res) => {
-  res.send('API do Catálogo de Produtos está rodando!');
+    res.send('API do Catálogo de Produtos está rodando!');
 });
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Servidor rodando na porta ${PORT}`);
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).json({ message: 'Erro interno do servidor' });
+});
+
+app.listen(port, () => {
+    console.log(`Servidor rodando na porta ${port}`);
 });
