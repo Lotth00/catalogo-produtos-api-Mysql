@@ -1,6 +1,6 @@
 # API de Catálogo de Produtos
 
-API RESTful para gerenciamento de produtos com autenticação de usuários e persistência em **MySQL**.
+API RESTful para gerenciamento de produtos, clientes, pedidos e categorias, com autenticação JWT e persistência em **MySQL**.
 
 ## Índice
 
@@ -8,6 +8,7 @@ API RESTful para gerenciamento de produtos com autenticação de usuários e per
 - Endpoints da API
 - Tecnologias utilizadas
 
+---
 
 ## Como rodar o projeto
 
@@ -16,8 +17,6 @@ API RESTful para gerenciamento de produtos com autenticação de usuários e per
 - Node.js instalado (versão 14 ou superior)
 - MySQL instalado localmente (ou servidor MySQL acessível)
 - MySQL Workbench (opcional, para gerenciar o banco)
-
----
 
 ### Passo a passo
 
@@ -86,6 +85,26 @@ CREATE TABLE IF NOT EXISTS produtos (
     PRIMARY KEY (id_produto),
     FOREIGN KEY (categorias_id_categoria) REFERENCES categorias (id_categoria)
 );
+
+-- Tabela de pedidos
+CREATE TABLE IF NOT EXISTS pedidos (
+    id_pedido INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    data DATE NOT NULL,
+    clientes_id_cliente INT UNSIGNED NOT NULL,
+    PRIMARY KEY (id_pedido),
+    FOREIGN KEY (clientes_id_cliente) REFERENCES clientes (id_cliente)
+);
+
+-- Tabela de itens do pedido (produtos_pedidos)
+CREATE TABLE IF NOT EXISTS produtos_pedidos (
+    produtos_id_produto INT UNSIGNED NOT NULL,
+    pedidos_id_pedido INT UNSIGNED NOT NULL,
+    quantidade DOUBLE NOT NULL,
+    valor DOUBLE NOT NULL,
+    PRIMARY KEY (produtos_id_produto, pedidos_id_pedido),
+    FOREIGN KEY (produtos_id_produto) REFERENCES produtos (id_produto),
+    FOREIGN KEY (pedidos_id_pedido) REFERENCES pedidos (id_pedido)
+);
 ```
 
 6. **Insira um usuário de teste (opcional, mas recomendado):**
@@ -111,7 +130,7 @@ O servidor vai rodar em **http://localhost:3000**
 
 ## Endpoints da API
 
-### 🔓 Autenticação (rotas públicas)
+### Autenticação (rotas públicas)
 
 | Método | Rota | Descrição |
 |--------|------|-----------|
@@ -147,7 +166,7 @@ O servidor vai rodar em **http://localhost:3000**
 
 ---
 
-### 📊 Status da API (rota pública)
+### Status da API (rota pública)
 
 | Método | Rota | Descrição |
 |--------|------|-----------|
@@ -163,7 +182,7 @@ O servidor vai rodar em **http://localhost:3000**
 
 ---
 
-### 🔒 Produtos (rotas protegidas)
+### Produtos (rotas protegidas)
 
 > **Como usar o token:** Adicione no cabeçalho (header) da requisição:
 > ```
@@ -181,7 +200,7 @@ O servidor vai rodar em **http://localhost:3000**
 **Exemplo de corpo para criar/atualizar produto:**
 ```json
 {
-  "name": "Fone Bluetooth",
+  "nome": "Fone Bluetooth",
   "valor": 99.90,
   "estoque": 10,
   "categorias_id_categoria": 1
@@ -190,7 +209,7 @@ O servidor vai rodar em **http://localhost:3000**
 
 ---
 
-### 📂 Categorias (rotas protegidas)
+### Categorias (rotas protegidas)
 
 | Método | Rota | Descrição |
 |--------|------|-----------|
@@ -204,6 +223,52 @@ O servidor vai rodar em **http://localhost:3000**
 ```json
 {
   "nome": "Eletrônicos"
+}
+```
+
+---
+
+### Clientes (rotas protegidas)
+
+| Método | Rota | Descrição |
+|--------|------|-----------|
+| **GET** | `/api/clientes` | Listar todos os clientes |
+| **GET** | `/api/clientes/:id` | Buscar cliente por ID |
+| **POST** | `/api/clientes` | Cadastrar novo cliente |
+| **PUT** | `/api/clientes/:id` | Atualizar cliente |
+| **DELETE** | `/api/clientes/:id` | Deletar cliente |
+
+**Exemplo de corpo para criar cliente:**
+```json
+{
+  "nome": "Maria Souza",
+  "email": "maria@email.com",
+  "senha": "123456",
+  "telefone": "11999999999",
+  "status": "bom"
+}
+```
+
+---
+
+### 🛒 Pedidos (rotas protegidas)
+
+| Método | Rota | Descrição |
+|--------|------|-----------|
+| **GET** | `/api/pedidos` | Listar todos os pedidos |
+| **GET** | `/api/pedidos/:id` | Buscar pedido por ID (com itens) |
+| **POST** | `/api/pedidos` | Criar novo pedido |
+| **PUT** | `/api/pedidos/:id` | Atualizar pedido (data e/ou itens) |
+| **DELETE** | `/api/pedidos/:id` | Deletar pedido |
+
+**Exemplo de corpo para criar pedido:**
+```json
+{
+  "clientes_id_cliente": 1,
+  "itens": [
+    { "produtos_id_produto": 1, "quantidade": 2 },
+    { "produtos_id_produto": 2, "quantidade": 1 }
+  ]
 }
 ```
 
@@ -233,7 +298,7 @@ Header: Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
 ```
 POST http://localhost:3000/api/products
 Header: Authorization: Bearer SEU_TOKEN
-Corpo: {"name": "Produto Teste", "valor": 99.90, "estoque": 5, "categorias_id_categoria": 1}
+Corpo: {"nome": "Produto Teste", "valor": 99.90, "estoque": 5, "categorias_id_categoria": 1}
 ```
 
 #### 5. Criar uma categoria
@@ -241,6 +306,13 @@ Corpo: {"name": "Produto Teste", "valor": 99.90, "estoque": 5, "categorias_id_ca
 POST http://localhost:3000/api/categorias
 Header: Authorization: Bearer SEU_TOKEN
 Corpo: {"nome": "Informática"}
+```
+
+#### 6. Criar um pedido
+```
+POST http://localhost:3000/api/pedidos
+Header: Authorization: Bearer SEU_TOKEN
+Corpo: {"clientes_id_cliente": 1, "itens": [{"produtos_id_produto": 1, "quantidade": 2}]}
 ```
 
 ---
@@ -255,6 +327,7 @@ Corpo: {"nome": "Informática"}
 - **Bcryptjs** – Criptografia de senhas
 - **dotenv** – Gerenciamento de variáveis de ambiente
 - **Cors** – Habilitar requisições de diferentes origens
+- **Swagger-UI-Express** – Documentação interativa (disponível em `/api-docs`)
 
 ---
 
@@ -262,8 +335,9 @@ Corpo: {"nome": "Informática"}
 
 - Todas as queries SQL utilizam **Prepared Statements** (`?`) para prevenir SQL Injection.
 - A autenticação é feita via **JWT** (Bearer Token).
-- As rotas de produtos e categorias exigem que o usuário esteja autenticado.
+- As rotas de produtos, categorias, clientes e pedidos exigem que o usuário esteja autenticado.
 - O projeto foi migrado de MongoDB para MySQL como parte de uma atividade acadêmica.
+- A documentação Swagger está disponível em `http://localhost:3000/api-docs`.
 
 ---
 
@@ -272,3 +346,4 @@ Corpo: {"nome": "Informática"}
 Desenvolvido como atividade acadêmica de migração de banco de dados.
 
 **GitHub:** [Lotth00](https://github.com/Lotth00)
+```
