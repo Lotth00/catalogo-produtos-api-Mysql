@@ -327,17 +327,6 @@ Corpo: {"clientes_id_cliente": 1, "itens": [{"produtos_id_produto": 1, "quantida
 - **Bcryptjs** – Criptografia de senhas
 - **dotenv** – Gerenciamento de variáveis de ambiente
 - **Cors** – Habilitar requisições de diferentes origens
-- **Swagger-UI-Express** – Documentação interativa (disponível em `/api-docs`)
-
----
-
-## Observações
-
-- Todas as queries SQL utilizam **Prepared Statements** (`?`) para prevenir SQL Injection.
-- A autenticação é feita via **JWT** (Bearer Token).
-- As rotas de produtos, categorias, clientes e pedidos exigem que o usuário esteja autenticado.
-- O projeto foi migrado de MongoDB para MySQL como parte de uma atividade acadêmica.
-- A documentação Swagger está disponível em `http://localhost:3000/api-docs`.
 
 ---
 
@@ -345,5 +334,6 @@ Corpo: {"clientes_id_cliente": 1, "itens": [{"produtos_id_produto": 1, "quantida
 
 Desenvolvido como atividade acadêmica de migração de banco de dados.
 
+```
 **GitHub:** [Lotth00](https://github.com/Lotth00)
 ```
