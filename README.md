@@ -332,8 +332,6 @@ Corpo: {"clientes_id_cliente": 1, "itens": [{"produtos_id_produto": 1, "quantida
 
 ## Autor
 
-Desenvolvido como atividade acadêmica de migração de banco de dados.
+Desenvolvido como atividade acadêmica de migração de banco de dados por Maria Luiza Altenhofen Loth.
 
-```
 **GitHub:** [Lotth00](https://github.com/Lotth00)
-```
