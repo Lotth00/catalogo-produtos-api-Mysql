@@ -1,12 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const { protect } = require('../middlewares/authMiddleware'); // <-- ADICIONE ESTA LINHA
+const { protect } = require('../middlewares/authMiddleware');
 const {
-    createProduct,
     getProducts,
     getProductById,
+    createProduct,
     updateProduct,
-    deleteProduct,
+    deleteProduct
 } = require('../controllers/productController');
 
 router.route('/')

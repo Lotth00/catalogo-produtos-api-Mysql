@@ -18,18 +18,17 @@ const findAll = async () => {
 };
 
 const findById = async (id) => {
-
     const [pedidoRows] = await pool.query(`
         SELECT p.*, c.nome AS cliente_nome
         FROM pedidos p
         JOIN clientes c ON p.clientes_id_cliente = c.id_cliente
         WHERE p.id_pedido = ?
     `, [id]);
-    
+
     if (pedidoRows.length === 0) return null;
-    
+
     const pedido = pedidoRows[0];
-    
+
     const [itensRows] = await pool.query(`
         SELECT 
             pp.produtos_id_produto,
@@ -40,7 +39,7 @@ const findById = async (id) => {
         JOIN produtos pr ON pp.produtos_id_produto = pr.id_produto
         WHERE pp.pedidos_id_pedido = ?
     `, [id]);
-    
+
     pedido.itens = itensRows;
     return pedido;
 };
@@ -48,7 +47,7 @@ const findById = async (id) => {
 const create = async (clientes_id_cliente, itens) => {
     const connection = await pool.getConnection();
     await connection.beginTransaction();
-    
+
     try {
         const dataAtual = new Date().toISOString().split('T')[0];
         const [pedidoResult] = await connection.query(
@@ -56,7 +55,7 @@ const create = async (clientes_id_cliente, itens) => {
             [dataAtual, clientes_id_cliente]
         );
         const pedidoId = pedidoResult.insertId;
-        
+
         for (const item of itens) {
             const [produtoRows] = await connection.query(
                 'SELECT valor FROM produtos WHERE id_produto = ?',
@@ -66,7 +65,7 @@ const create = async (clientes_id_cliente, itens) => {
                 throw new Error(`Produto ID ${item.produtos_id_produto} não encontrado`);
             }
             const valorUnitario = produtoRows[0].valor;
-            
+
             await connection.query(
                 `INSERT INTO produtos_pedidos 
                  (produtos_id_produto, pedidos_id_pedido, quantidade, valor) 
@@ -74,10 +73,10 @@ const create = async (clientes_id_cliente, itens) => {
                 [item.produtos_id_produto, pedidoId, item.quantidade, valorUnitario]
             );
         }
-        
+
         await connection.commit();
         return findById(pedidoId);
-        
+
     } catch (error) {
         await connection.rollback();
         throw error;
@@ -89,7 +88,7 @@ const create = async (clientes_id_cliente, itens) => {
 const update = async (id, data, itens) => {
     const connection = await pool.getConnection();
     await connection.beginTransaction();
-    
+
     try {
         if (data) {
             await connection.query(
@@ -97,14 +96,12 @@ const update = async (id, data, itens) => {
                 [data, id]
             );
         }
-        
 
         await connection.query(
             'DELETE FROM produtos_pedidos WHERE pedidos_id_pedido = ?',
             [id]
         );
-        
-        
+
         if (itens && itens.length > 0) {
             for (const item of itens) {
                 const [produtoRows] = await connection.query(
@@ -115,7 +112,7 @@ const update = async (id, data, itens) => {
                     throw new Error(`Produto ID ${item.produtos_id_produto} não encontrado`);
                 }
                 const valorUnitario = produtoRows[0].valor;
-                
+
                 await connection.query(
                     `INSERT INTO produtos_pedidos 
                      (produtos_id_produto, pedidos_id_pedido, quantidade, valor) 
@@ -124,10 +121,10 @@ const update = async (id, data, itens) => {
                 );
             }
         }
-        
+
         await connection.commit();
         return findById(id);
-        
+
     } catch (error) {
         await connection.rollback();
         throw error;
@@ -139,7 +136,7 @@ const update = async (id, data, itens) => {
 const remove = async (id) => {
     const connection = await pool.getConnection();
     await connection.beginTransaction();
-    
+
     try {
         await connection.query(
             'DELETE FROM produtos_pedidos WHERE pedidos_id_pedido = ?',
