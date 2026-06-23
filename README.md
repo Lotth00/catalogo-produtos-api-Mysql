@@ -251,7 +251,7 @@ O servidor vai rodar em **http://localhost:3000**
 
 ---
 
-### 🛒 Pedidos (rotas protegidas)
+### Pedidos (rotas protegidas)
 
 | Método | Rota | Descrição |
 |--------|------|-----------|
