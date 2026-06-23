@@ -1,15 +1,13 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "Minha API",
-    "description": "Documentação interativa da API",
-    "version": "1.0.0"
+    "title": "API de Catálogo de Produtos",
+    "description": "API RESTful para gerenciamento de produtos, clientes, pedidos e categorias com autenticação JWT e MySQL",
+    "version": "2.0.0"
   },
   "host": "localhost:3000",
   "basePath": "/",
-  "schemes": [
-    "http"
-  ],
+  "schemes": ["http"],
   "securityDefinitions": {
     "bearerAuth": {
       "type": "apiKey",
@@ -18,74 +16,740 @@
       "description": "Insira o token JWT no formato: Bearer {token}"
     }
   },
-  "consumes": [
-    "application/json"
-  ],
-  "produces": [
-    "application/json"
-  ],
+  "consumes": ["application/json"],
+  "produces": ["application/json"],
   "paths": {
-    "/": {
+    "/api/status": {
       "get": {
-        "description": "",
+        "summary": "Verifica o status da API",
+        "description": "Rota pública que retorna a versão e status da API",
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "API online",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "versao": { "type": "string", "example": "2.0.0" },
+                "status": { "type": "string", "example": "online" }
+              }
+            }
           }
         }
       }
     },
     "/api/auth/register": {
       "post": {
-        "description": "",
+        "summary": "Registra um novo usuário",
+        "tags": ["Autenticação"],
         "parameters": [
           {
             "name": "body",
             "in": "body",
+            "required": true,
             "schema": {
               "type": "object",
+              "required": ["name", "email", "password"],
               "properties": {
-                "name": {
-                  "example": "any"
-                },
-                "email": {
-                  "example": "any"
-                },
-                "password": {
-                  "example": "any"
-                }
+                "name": { "type": "string", "example": "João Silva" },
+                "email": { "type": "string", "example": "joao@email.com" },
+                "password": { "type": "string", "example": "123456" }
               }
             }
           }
         ],
         "responses": {
           "201": {
-            "description": "Created"
+            "description": "Usuário criado com sucesso",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "_id": { "type": "integer", "example": 1 },
+                "name": { "type": "string", "example": "João Silva" },
+                "email": { "type": "string", "example": "joao@email.com" },
+                "token": { "type": "string", "example": "eyJhbGciOiJIUzI1NiIs..." }
+              }
+            }
           },
-          "400": {
-            "description": "Bad Request"
-          },
-          "500": {
-            "description": "Internal Server Error"
-          }
+          "400": { "description": "Dados inválidos ou email já existe" },
+          "500": { "description": "Erro interno do servidor" }
         }
       }
     },
     "/api/auth/login": {
       "post": {
-        "description": "",
+        "summary": "Autentica um usuário e retorna um token JWT",
+        "tags": ["Autenticação"],
         "parameters": [
           {
             "name": "body",
             "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": ["email", "password"],
+              "properties": {
+                "email": { "type": "string", "example": "joao@email.com" },
+                "password": { "type": "string", "example": "123456" }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Login bem-sucedido",
             "schema": {
               "type": "object",
               "properties": {
-                "email": {
-                  "example": "any"
-                },
-                "password": {
-                  "example": "any"
+                "_id": { "type": "integer", "example": 1 },
+                "name": { "type": "string", "example": "João Silva" },
+                "email": { "type": "string", "example": "joao@email.com" },
+                "token": { "type": "string", "example": "eyJhbGciOiJIUzI1NiIs..." }
+              }
+            }
+          },
+          "401": { "description": "Credenciais inválidas" },
+          "500": { "description": "Erro interno do servidor" }
+        }
+      }
+    },
+    "/api/products": {
+      "get": {
+        "summary": "Lista todos os produtos",
+        "tags": ["Produtos"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Lista de produtos",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": { "type": "integer", "example": 1 },
+                  "nome": { "type": "string", "example": "Smartphone" },
+                  "price": { "type": "number", "example": 1500.00 },
+                  "estoque": { "type": "integer", "example": 10 },
+                  "category": { "type": "string", "example": "Eletrônicos" }
+                }
+              }
+            }
+          },
+          "401": { "description": "Token não fornecido ou inválido" }
+        }
+      },
+      "post": {
+        "summary": "Cria um novo produto",
+        "tags": ["Produtos"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": ["nome", "valor", "estoque", "categorias_id_categoria"],
+              "properties": {
+                "nome": { "type": "string", "example": "Fone Bluetooth" },
+                "valor": { "type": "number", "example": 99.90 },
+                "estoque": { "type": "integer", "example": 10 },
+                "categorias_id_categoria": { "type": "integer", "example": 1 }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Produto criado",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "id": { "type": "integer", "example": 1 },
+                "nome": { "type": "string", "example": "Fone Bluetooth" },
+                "valor": { "type": "number", "example": 99.90 },
+                "estoque": { "type": "integer", "example": 10 },
+                "categorias_id_categoria": { "type": "integer", "example": 1 }
+              }
+            }
+          },
+          "400": { "description": "Dados inválidos" },
+          "401": { "description": "Token não fornecido ou inválido" }
+        }
+      }
+    },
+    "/api/products/{id}": {
+      "get": {
+        "summary": "Busca um produto pelo ID",
+        "tags": ["Produtos"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "description": "ID do produto"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Produto encontrado",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "id": { "type": "integer", "example": 1 },
+                "nome": { "type": "string", "example": "Smartphone" },
+                "price": { "type": "number", "example": 1500.00 },
+                "estoque": { "type": "integer", "example": 10 },
+                "category": { "type": "string", "example": "Eletrônicos" }
+              }
+            }
+          },
+          "401": { "description": "Token não fornecido ou inválido" },
+          "404": { "description": "Produto não encontrado" }
+        }
+      },
+      "put": {
+        "summary": "Atualiza um produto existente",
+        "tags": ["Produtos"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "description": "ID do produto"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": ["nome", "valor", "estoque", "categorias_id_categoria"],
+              "properties": {
+                "nome": { "type": "string", "example": "Smartphone Pro" },
+                "valor": { "type": "number", "example": 1800.00 },
+                "estoque": { "type": "integer", "example": 5 },
+                "categorias_id_categoria": { "type": "integer", "example": 1 }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Produto atualizado",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "id": { "type": "integer", "example": 1 },
+                "nome": { "type": "string", "example": "Smartphone Pro" },
+                "valor": { "type": "number", "example": 1800.00 },
+                "estoque": { "type": "integer", "example": 5 },
+                "categorias_id_categoria": { "type": "integer", "example": 1 }
+              }
+            }
+          },
+          "400": { "description": "Dados inválidos" },
+          "401": { "description": "Token não fornecido ou inválido" },
+          "404": { "description": "Produto não encontrado" }
+        }
+      },
+      "delete": {
+        "summary": "Deleta um produto",
+        "tags": ["Produtos"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "description": "ID do produto"
+          }
+        ],
+        "responses": {
+          "204": { "description": "Produto deletado com sucesso (sem conteúdo)" },
+          "401": { "description": "Token não fornecido ou inválido" },
+          "404": { "description": "Produto não encontrado" }
+        }
+      }
+    },
+    "/api/categorias": {
+      "get": {
+        "summary": "Lista todas as categorias",
+        "tags": ["Categorias"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Lista de categorias",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id_categoria": { "type": "integer", "example": 1 },
+                  "nome": { "type": "string", "example": "Eletrônicos" }
+                }
+              }
+            }
+          },
+          "401": { "description": "Token não fornecido ou inválido" }
+        }
+      },
+      "post": {
+        "summary": "Cria uma nova categoria",
+        "tags": ["Categorias"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": ["nome"],
+              "properties": {
+                "nome": { "type": "string", "example": "Informática" }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Categoria criada",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "id_categoria": { "type": "integer", "example": 1 },
+                "nome": { "type": "string", "example": "Informática" }
+              }
+            }
+          },
+          "400": { "description": "Nome da categoria é obrigatório" },
+          "401": { "description": "Token não fornecido ou inválido" }
+        }
+      }
+    },
+    "/api/categorias/{id}": {
+      "get": {
+        "summary": "Busca uma categoria pelo ID",
+        "tags": ["Categorias"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "description": "ID da categoria"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Categoria encontrada",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "id_categoria": { "type": "integer", "example": 1 },
+                "nome": { "type": "string", "example": "Eletrônicos" }
+              }
+            }
+          },
+          "401": { "description": "Token não fornecido ou inválido" },
+          "404": { "description": "Categoria não encontrada" }
+        }
+      },
+      "put": {
+        "summary": "Atualiza uma categoria existente",
+        "tags": ["Categorias"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "description": "ID da categoria"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": ["nome"],
+              "properties": {
+                "nome": { "type": "string", "example": "Eletrônicos e Gadgets" }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Categoria atualizada",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "id_categoria": { "type": "integer", "example": 1 },
+                "nome": { "type": "string", "example": "Eletrônicos e Gadgets" }
+              }
+            }
+          },
+          "400": { "description": "Nome da categoria é obrigatório" },
+          "401": { "description": "Token não fornecido ou inválido" },
+          "404": { "description": "Categoria não encontrada" }
+        }
+      },
+      "delete": {
+        "summary": "Deleta uma categoria",
+        "tags": ["Categorias"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "description": "ID da categoria"
+          }
+        ],
+        "responses": {
+          "204": { "description": "Categoria deletada com sucesso (sem conteúdo)" },
+          "401": { "description": "Token não fornecido ou inválido" },
+          "404": { "description": "Categoria não encontrada" }
+        }
+      }
+    },
+    "/api/clientes": {
+      "get": {
+        "summary": "Lista todos os clientes",
+        "tags": ["Clientes"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Lista de clientes",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id_cliente": { "type": "integer", "example": 1 },
+                  "nome": { "type": "string", "example": "Maria Souza" },
+                  "email": { "type": "string", "example": "maria@email.com" },
+                  "telefone": { "type": "string", "example": "11999999999" },
+                  "status": { "type": "string", "example": "bom" }
+                }
+              }
+            }
+          },
+          "401": { "description": "Token não fornecido ou inválido" }
+        }
+      },
+      "post": {
+        "summary": "Cria um novo cliente",
+        "tags": ["Clientes"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": ["nome", "email", "senha"],
+              "properties": {
+                "nome": { "type": "string", "example": "Ana Costa" },
+                "email": { "type": "string", "example": "ana@email.com" },
+                "senha": { "type": "string", "example": "123456" },
+                "telefone": { "type": "string", "example": "11888888888" },
+                "status": { "type": "string", "enum": ["bom", "medio", "ruim"], "example": "bom" }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Cliente criado",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "id_cliente": { "type": "integer", "example": 1 },
+                "nome": { "type": "string", "example": "Ana Costa" },
+                "email": { "type": "string", "example": "ana@email.com" },
+                "telefone": { "type": "string", "example": "11888888888" },
+                "status": { "type": "string", "example": "bom" }
+              }
+            }
+          },
+          "400": { "description": "Nome, email e senha são obrigatórios" },
+          "401": { "description": "Token não fornecido ou inválido" }
+        }
+      }
+    },
+    "/api/clientes/{id}": {
+      "get": {
+        "summary": "Busca um cliente pelo ID",
+        "tags": ["Clientes"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "description": "ID do cliente"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cliente encontrado",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "id_cliente": { "type": "integer", "example": 1 },
+                "nome": { "type": "string", "example": "Maria Souza" },
+                "email": { "type": "string", "example": "maria@email.com" },
+                "telefone": { "type": "string", "example": "11999999999" },
+                "status": { "type": "string", "example": "bom" }
+              }
+            }
+          },
+          "401": { "description": "Token não fornecido ou inválido" },
+          "404": { "description": "Cliente não encontrado" }
+        }
+      },
+      "put": {
+        "summary": "Atualiza um cliente existente",
+        "tags": ["Clientes"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "description": "ID do cliente"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": ["nome", "email"],
+              "properties": {
+                "nome": { "type": "string", "example": "Ana Costa Silva" },
+                "email": { "type": "string", "example": "ana.silva@email.com" },
+                "senha": { "type": "string", "example": "654321" },
+                "telefone": { "type": "string", "example": "11777777777" },
+                "status": { "type": "string", "enum": ["bom", "medio", "ruim"], "example": "medio" }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cliente atualizado",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "id_cliente": { "type": "integer", "example": 1 },
+                "nome": { "type": "string", "example": "Ana Costa Silva" },
+                "email": { "type": "string", "example": "ana.silva@email.com" },
+                "telefone": { "type": "string", "example": "11777777777" },
+                "status": { "type": "string", "example": "medio" }
+              }
+            }
+          },
+          "400": { "description": "Nome e email são obrigatórios" },
+          "401": { "description": "Token não fornecido ou inválido" },
+          "404": { "description": "Cliente não encontrado" }
+        }
+      },
+      "delete": {
+        "summary": "Deleta um cliente",
+        "tags": ["Clientes"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "description": "ID do cliente"
+          }
+        ],
+        "responses": {
+          "204": { "description": "Cliente deletado com sucesso (sem conteúdo)" },
+          "401": { "description": "Token não fornecido ou inválido" },
+          "404": { "description": "Cliente não encontrado" }
+        }
+      }
+    },
+    "/api/pedidos": {
+      "get": {
+        "summary": "Lista todos os pedidos",
+        "tags": ["Pedidos"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Lista de pedidos com total",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id_pedido": { "type": "integer", "example": 1 },
+                  "data": { "type": "string", "format": "date", "example": "2025-06-23" },
+                  "clientes_id_cliente": { "type": "integer", "example": 1 },
+                  "cliente_nome": { "type": "string", "example": "Admin Teste" },
+                  "total": { "type": "number", "example": 3099.90 }
+                }
+              }
+            }
+          },
+          "401": { "description": "Token não fornecido ou inválido" }
+        }
+      },
+      "post": {
+        "summary": "Cria um novo pedido com seus itens",
+        "tags": ["Pedidos"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": ["clientes_id_cliente", "itens"],
+              "properties": {
+                "clientes_id_cliente": { "type": "integer", "example": 1, "description": "ID do cliente (deve ser o mesmo do usuário logado)" },
+                "itens": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": ["produtos_id_produto", "quantidade"],
+                    "properties": {
+                      "produtos_id_produto": { "type": "integer", "example": 1 },
+                      "quantidade": { "type": "number", "example": 2 }
+                    }
+                  },
+                  "example": [
+                    { "produtos_id_produto": 1, "quantidade": 2 },
+                    { "produtos_id_produto": 2, "quantidade": 1 }
+                  ]
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Pedido criado com sucesso",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "id_pedido": { "type": "integer", "example": 1 },
+                "data": { "type": "string", "format": "date", "example": "2025-06-23" },
+                "clientes_id_cliente": { "type": "integer", "example": 1 },
+                "cliente_nome": { "type": "string", "example": "Admin Teste" },
+                "itens": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "produtos_id_produto": { "type": "integer", "example": 1 },
+                      "quantidade": { "type": "number", "example": 2 },
+                      "valor": { "type": "number", "example": 1500.00 },
+                      "produto_nome": { "type": "string", "example": "Smartphone" }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Cliente e itens são obrigatórios" },
+          "401": { "description": "Token não fornecido ou inválido" },
+          "403": { "description": "Você só pode criar pedidos para o seu próprio ID" }
+        }
+      }
+    },
+    "/api/pedidos/{id}": {
+      "get": {
+        "summary": "Busca um pedido pelo ID com seus itens",
+        "tags": ["Pedidos"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "description": "ID do pedido"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pedido encontrado",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "id_pedido": { "type": "integer", "example": 1 },
+                "data": { "type": "string", "format": "date", "example": "2025-06-23" },
+                "clientes_id_cliente": { "type": "integer", "example": 1 },
+                "cliente_nome": { "type": "string", "example": "Admin Teste" },
+                "itens": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "produtos_id_produto": { "type": "integer", "example": 1 },
+                      "quantidade": { "type": "number", "example": 2 },
+                      "valor": { "type": "number", "example": 1500.00 },
+                      "produto_nome": { "type": "string", "example": "Smartphone" }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Token não fornecido ou inválido" },
+          "404": { "description": "Pedido não encontrado" }
+        }
+      },
+      "put": {
+        "summary": "Atualiza um pedido existente (data e/ou itens)",
+        "tags": ["Pedidos"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "description": "ID do pedido"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": { "type": "string", "format": "date", "example": "2025-06-24" },
+                "itens": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": ["produtos_id_produto", "quantidade"],
+                    "properties": {
+                      "produtos_id_produto": { "type": "integer", "example": 1 },
+                      "quantidade": { "type": "number", "example": 5 }
+                    }
+                  }
                 }
               }
             }
@@ -93,150 +757,52 @@
         ],
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "Pedido atualizado",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "id_pedido": { "type": "integer", "example": 1 },
+                "data": { "type": "string", "format": "date", "example": "2025-06-24" },
+                "clientes_id_cliente": { "type": "integer", "example": 1 },
+                "cliente_nome": { "type": "string", "example": "Admin Teste" },
+                "itens": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "produtos_id_produto": { "type": "integer", "example": 1 },
+                      "quantidade": { "type": "number", "example": 5 },
+                      "valor": { "type": "number", "example": 1500.00 },
+                      "produto_nome": { "type": "string", "example": "Smartphone" }
+                    }
+                  }
+                }
+              }
+            }
           },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "500": {
-            "description": "Internal Server Error"
-          }
-        }
-      }
-    },
-    "/api/products/": {
-      "get": {
-        "description": "",
-        "parameters": [
-          {
-            "name": "authorization",
-            "in": "header",
-            "type": "string"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "500": {
-            "description": "Internal Server Error"
-          }
-        }
-      },
-      "post": {
-        "description": "",
-        "parameters": [
-          {
-            "name": "authorization",
-            "in": "header",
-            "type": "string"
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "Created"
-          },
-          "400": {
-            "description": "Bad Request"
-          },
-          "401": {
-            "description": "Unauthorized"
-          }
-        }
-      }
-    },
-    "/api/products/{id}": {
-      "get": {
-        "description": "",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "authorization",
-            "in": "header",
-            "type": "string"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "404": {
-            "description": "Not Found"
-          },
-          "500": {
-            "description": "Internal Server Error"
-          }
-        }
-      },
-      "put": {
-        "description": "",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "authorization",
-            "in": "header",
-            "type": "string"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          },
-          "400": {
-            "description": "Bad Request"
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "404": {
-            "description": "Not Found"
-          }
+          "401": { "description": "Token não fornecido ou inválido" },
+          "403": { "description": "Você só pode alterar os seus próprios pedidos" },
+          "404": { "description": "Pedido não encontrado" }
         }
       },
       "delete": {
-        "description": "",
+        "summary": "Deleta um pedido (e seus itens)",
+        "tags": ["Pedidos"],
+        "security": [{ "bearerAuth": [] }],
         "parameters": [
           {
             "name": "id",
             "in": "path",
             "required": true,
-            "type": "string"
-          },
-          {
-            "name": "authorization",
-            "in": "header",
-            "type": "string"
+            "type": "integer",
+            "description": "ID do pedido"
           }
         ],
         "responses": {
-          "200": {
-            "description": "OK"
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "404": {
-            "description": "Not Found"
-          },
-          "500": {
-            "description": "Internal Server Error"
-          }
+          "204": { "description": "Pedido deletado com sucesso (sem conteúdo)" },
+          "401": { "description": "Token não fornecido ou inválido" },
+          "403": { "description": "Você só pode deletar os seus próprios pedidos" },
+          "404": { "description": "Pedido não encontrado" }
         }
       }
     }
