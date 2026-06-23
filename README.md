@@ -327,6 +327,7 @@ Corpo: {"clientes_id_cliente": 1, "itens": [{"produtos_id_produto": 1, "quantida
 - **Bcryptjs** – Criptografia de senhas
 - **dotenv** – Gerenciamento de variáveis de ambiente
 - **Cors** – Habilitar requisições de diferentes origens
+- **Swagger UI Express** – Documentação interativa e testes da API
 
 ---
 
